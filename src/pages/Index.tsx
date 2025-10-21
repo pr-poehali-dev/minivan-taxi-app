@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,11 +49,13 @@ const vehicles: Vehicle[] = [
 type TripType = 'city' | 'airport' | 'intercity' | 'hourly';
 
 const Index = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState<'route' | 'vehicle' | 'payment'>('route');
   const [tripType, setTripType] = useState<TripType>('city');
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [showMap, setShowMap] = useState(false);
 
   const tripTypes = [
     { id: 'city' as TripType, label: 'Городской', icon: 'Car' },
@@ -81,9 +84,15 @@ const Index = () => {
               <p className="text-xs text-gray-500">Премиум минивэны</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon">
-            <Icon name="Menu" size={24} />
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate('/driver')}>
+              <Icon name="Car" size={18} className="mr-2" />
+              Водитель
+            </Button>
+            <Button variant="ghost" size="icon">
+              <Icon name="Menu" size={24} />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -153,11 +162,45 @@ const Index = () => {
                 </div>
               </Card>
 
-              <Card className="h-64 mb-6 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center border-0 shadow-lg overflow-hidden">
-                <div className="text-center">
-                  <Icon name="Map" size={48} className="text-primary mx-auto mb-2" />
-                  <p className="text-gray-600">Карта маршрута</p>
-                </div>
+              <Card className="h-64 mb-6 bg-gradient-to-br from-blue-50 to-blue-100 border-0 shadow-lg overflow-hidden relative">
+                {!showMap ? (
+                  <button 
+                    onClick={() => setShowMap(true)}
+                    className="w-full h-full flex items-center justify-center hover:bg-blue-200/50 transition-colors"
+                  >
+                    <div className="text-center">
+                      <Icon name="Map" size={48} className="text-primary mx-auto mb-2" />
+                      <p className="text-gray-600 font-medium">Показать карту маршрута</p>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="w-full h-full relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="relative w-48 h-48 mx-auto mb-4">
+                          <div className="absolute top-4 left-4 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                          <div className="absolute top-4 left-4 w-3 h-3 bg-green-500 rounded-full opacity-50 animate-ping" />
+                          <Icon name="MapPin" size={20} className="absolute top-3 left-3 text-green-600" />
+                          
+                          <Icon name="Navigation" size={20} className="absolute bottom-3 right-3 text-primary" />
+                          <div className="absolute bottom-4 right-4 w-3 h-3 bg-primary rounded-full animate-pulse" />
+                          
+                          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                            <path
+                              d="M 20 20 Q 50 50, 80 80"
+                              stroke="#0EA5E9"
+                              strokeWidth="2"
+                              fill="none"
+                              strokeDasharray="4 4"
+                              className="animate-pulse"
+                            />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-600">~15 км • ~25 минут</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </Card>
 
               <Button 
