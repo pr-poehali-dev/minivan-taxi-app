@@ -1,4 +1,6 @@
 {
+  "rate-driver": "https://functions.poehali.dev/8b313b0e-734a-4200-ad1f-61bc75a3ed8b",
+  "get-driver-stats": "https://functions.poehali.dev/64aa4dc0-a95b-43ee-820f-954e35c6e546",
   "create-order": "https://functions.poehali.dev/b89fe07b-fddc-4515-8a46-7c5da3a37e7e",
   "get-vehicles": "https://functions.poehali.dev/c563d639-faee-4f32-a63a-74f79965e6f8"
 }

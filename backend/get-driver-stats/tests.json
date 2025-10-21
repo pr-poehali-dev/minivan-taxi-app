@@ -1,0 +1,23 @@
+{
+  "tests": [
+    {
+      "name": "Get driver stats",
+      "method": "GET",
+      "path": "/?driver_id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "driver_name": "string",
+        "average_rating": "number",
+        "total_ratings": "number"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Missing driver_id",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 400,
+      "bodyMatcher": "partial"
+    }
+  ]
+}

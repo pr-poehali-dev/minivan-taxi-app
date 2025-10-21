@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Icon from '@/components/ui/icon';
+import RatingStars from '@/components/RatingStars';
 
 interface Order {
   id: number;
@@ -19,9 +20,24 @@ interface Order {
   created_at: string;
 }
 
+const DRIVER_ID = 1;
+const BACKEND_URLS = {
+  getDriverStats: 'https://functions.poehali.dev/64aa4dc0-a95b-43ee-820f-954e35c6e546'
+};
+
+interface DriverStats {
+  driver_name: string;
+  average_rating: number;
+  total_ratings: number;
+  completed_trips: number;
+  total_earnings: number;
+  rating_distribution: Record<string, number>;
+}
+
 const Driver = () => {
   const [activeTab, setActiveTab] = useState<'new' | 'active' | 'history'>('new');
   const [orders, setOrders] = useState<Order[]>([]);
+  const [stats, setStats] = useState<DriverStats | null>(null);
 
   const mockOrders: Order[] = [
     {
@@ -54,7 +70,18 @@ const Driver = () => {
 
   useEffect(() => {
     setOrders(mockOrders);
+    fetchDriverStats();
   }, []);
+
+  const fetchDriverStats = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URLS.getDriverStats}?driver_id=${DRIVER_ID}`);
+      const data = await response.json();
+      setStats(data);
+    } catch (error) {
+      console.error('Failed to fetch driver stats:', error);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const styles = {
@@ -96,10 +123,12 @@ const Driver = () => {
                 <AvatarFallback className="bg-primary text-white text-lg">АК</AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Азиз Каримов</h1>
+                <h1 className="text-lg font-bold text-gray-900">{stats?.driver_name || 'Загрузка...'}</h1>
                 <div className="flex items-center gap-2">
-                  <Icon name="Star" size={14} className="text-yellow-500 fill-yellow-500" />
-                  <span className="text-sm text-gray-600">4.95 • 342 поездки</span>
+                  <RatingStars rating={stats?.average_rating || 0} readonly size={14} />
+                  <span className="text-sm text-gray-600">
+                    {stats?.average_rating.toFixed(2) || '0.00'} • {stats?.total_ratings || 0} отзывов
+                  </span>
                 </div>
               </div>
             </div>
@@ -143,8 +172,10 @@ const Driver = () => {
           <Card className="p-4 border-0 shadow-md bg-gradient-to-br from-purple-50 to-purple-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Заработок сегодня</p>
-                <p className="text-3xl font-bold text-purple-600">185K</p>
+                <p className="text-sm text-gray-600 mb-1">Всего заработано</p>
+                <p className="text-3xl font-bold text-purple-600">
+                  {stats ? `${(stats.total_earnings / 1000).toFixed(0)}K` : '0K'}
+                </p>
               </div>
               <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
                 <Icon name="Wallet" size={24} className="text-white" />

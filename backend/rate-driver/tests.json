@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "Rate driver successfully",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "order_id": 1,
+        "driver_id": 1,
+        "rating": 5,
+        "comment": "Отличный водитель!"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "rating": 5,
+        "average_rating": "number"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Invalid rating value",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "order_id": 1,
+        "driver_id": 1,
+        "rating": 6
+      },
+      "expectedStatus": 400,
+      "bodyMatcher": "partial"
+    }
+  ]
+}
