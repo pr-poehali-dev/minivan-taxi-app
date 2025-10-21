@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,55 +8,98 @@ import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 
 interface Vehicle {
-  id: string;
+  id: number;
   model: string;
-  image: string;
+  image?: string;
   seats: number;
   luggage: number;
   price: number;
   features: string[];
+  is_available?: boolean;
 }
 
-const vehicles: Vehicle[] = [
-  {
-    id: '1',
-    model: 'Kia Carnival',
-    image: '/placeholder.svg',
-    seats: 7,
-    luggage: 4,
-    price: 45000,
-    features: ['Кондиционер', 'Wi-Fi', 'USB-зарядка', 'Панорамная крыша']
-  },
-  {
-    id: '2',
-    model: 'Hyundai Staria',
-    image: '/placeholder.svg',
-    seats: 9,
-    luggage: 5,
-    price: 55000,
-    features: ['Premium салон', 'Климат-контроль', 'Массажные кресла', 'Холодильник']
-  },
-  {
-    id: '3',
-    model: 'Hyundai H1',
-    image: '/placeholder.svg',
-    seats: 8,
-    luggage: 6,
-    price: 40000,
-    features: ['Кондиционер', 'Большой багажник', 'USB-зарядка', 'Аудиосистема']
-  }
-];
+const BACKEND_URLS = {
+  getVehicles: 'https://functions.poehali.dev/c563d639-faee-4f32-a63a-74f79965e6f8',
+  createOrder: 'https://functions.poehali.dev/b89fe07b-fddc-4515-8a46-7c5da3a37e7e'
+};
 
 type TripType = 'city' | 'airport' | 'intercity' | 'hourly';
 
 const Index = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [step, setStep] = useState<'route' | 'vehicle' | 'payment'>('route');
   const [tripType, setTripType] = useState<TripType>('city');
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
-  const [showMap, setShowMap] = useState(false);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<string>('payme');
+
+  useEffect(() => {
+    fetchVehicles();
+  }, []);
+
+  const fetchVehicles = async () => {
+    try {
+      const response = await fetch(BACKEND_URLS.getVehicles);
+      const data = await response.json();
+      setVehicles(data.vehicles || []);
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось загрузить список автомобилей',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleCreateOrder = async () => {
+    if (!selectedVehicle) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(BACKEND_URLS.createOrder, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_location: from,
+          to_location: to,
+          trip_type: tripType,
+          vehicle_id: selectedVehicle.id,
+          vehicle_model: selectedVehicle.model,
+          price: selectedVehicle.price,
+          payment_method: selectedPayment,
+          customer_name: 'Гость',
+          customer_phone: '+998901234567'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: 'Заказ создан!',
+          description: `Номер заказа: ${data.order_number}`
+        });
+        setStep('route');
+        setFrom('');
+        setTo('');
+        setSelectedVehicle(null);
+      } else {
+        throw new Error(data.error || 'Ошибка создания заказа');
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось создать заказ',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const tripTypes = [
     { id: 'city' as TripType, label: 'Городской', icon: 'Car' },
@@ -332,7 +376,12 @@ const Index = () => {
                   {paymentMethods.map(method => (
                     <button
                       key={method.id}
-                      className="p-4 border-2 border-gray-200 rounded-xl hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-3 hover:scale-105 duration-200"
+                      onClick={() => setSelectedPayment(method.id)}
+                      className={`p-4 border-2 rounded-xl transition-all flex items-center gap-3 hover:scale-105 duration-200 ${
+                        selectedPayment === method.id 
+                          ? 'border-primary bg-primary/10' 
+                          : 'border-gray-200 hover:border-primary hover:bg-primary/5'
+                      }`}
                     >
                       <Icon name={method.icon as any} size={24} className="text-gray-600" />
                       <span className="font-medium">{method.name}</span>
@@ -341,9 +390,17 @@ const Index = () => {
                 </div>
               </Card>
 
-              <Button className="w-full h-14 text-lg font-semibold shadow-lg hover:shadow-xl transition-all bg-green-500 hover:bg-green-600">
-                <Icon name="Check" size={20} className="mr-2" />
-                Подтвердить заказ
+              <Button 
+                onClick={handleCreateOrder}
+                disabled={loading}
+                className="w-full h-14 text-lg font-semibold shadow-lg hover:shadow-xl transition-all bg-green-500 hover:bg-green-600"
+              >
+                {loading ? (
+                  <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                ) : (
+                  <Icon name="Check" size={20} className="mr-2" />
+                )}
+                {loading ? 'Создание заказа...' : 'Подтвердить заказ'}
               </Button>
             </div>
           </div>

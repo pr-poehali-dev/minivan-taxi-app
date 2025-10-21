@@ -1,0 +1,36 @@
+{
+  "tests": [
+    {
+      "name": "Create order successfully",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "from_location": "Тестовая улица 1",
+        "to_location": "Тестовая улица 2",
+        "trip_type": "city",
+        "vehicle_id": 1,
+        "vehicle_model": "Kia Carnival",
+        "price": 45000,
+        "customer_name": "Тест Тестов",
+        "customer_phone": "+998901234567",
+        "payment_method": "payme"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "order_number": "string",
+        "status": "new"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Missing required fields",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "from_location": "Test"
+      },
+      "expectedStatus": 400,
+      "bodyMatcher": "partial"
+    }
+  ]
+}
